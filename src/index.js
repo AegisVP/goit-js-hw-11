@@ -1,24 +1,19 @@
 import axios from 'axios';
 import { Notify } from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
+import debounce from 'lodash.debounce';
 import 'simplelightbox/dist/simple-lightbox.min.css';
+
+const DEBOUNCE_DELAY = 250;
 
 const refs = {
   searchForm: document.querySelector('form#search-form'),
   loadMoreButton: document.querySelector('.gallery__loadmore-button'),
   gallery: document.querySelector('.gallery'),
   loadingImg: document.querySelector('.gallery__loading'),
-  submitBtn: document.querySelector('form.search-form > button[type="submit"'),
+  submitBtn: document.querySelector('form.search-form > button[type="submit"]'),
   searchQuery: document.querySelector('form > input[name="searchQuery"]'),
 };
-
-// const searchFormRef = document.querySelector('form#search-form');
-// const loadMoreButtonRef = document.querySelector('.gallery__loadmore-button');
-// const galleryRef = document.querySelector('.gallery');
-// const loadingImgRef = document.querySelector('.gallery__loading');
-// const submitBtnRef = document.querySelector(
-//   'form.search-form > button[type="submit"'
-// );
 
 let page = null;
 let perPage = 40;
@@ -28,6 +23,25 @@ let myGalleryLightbox = null;
 refs.searchForm.addEventListener('submit', onSearchSubmit);
 refs.searchQuery.addEventListener('input', onInput);
 refs.loadMoreButton.addEventListener('click', onLoadMore);
+
+// window.addEventListener('scroll', debounce(doInfiniteScroll, DEBOUNCE_DELAY));
+
+// function doInfiniteScroll() {
+//   console.log('infinite scroll fired');
+//   const nr = { ...refs, lastImage: refs.gallery.lastChild };
+//   const bounding = nr.lastImage?.getBoundingClientRect();
+//   const imgHeight = nr.lastImage?.offsetHeight;
+
+//   console.log(nr);
+
+//   if (
+//     bounding.top >= -imgHeight &&
+//     bounding.bottom <=
+//       (window.innerHeight || document.documentElement.clientHeight) + imgHeight
+//   ) {
+//     onLoadMore();
+//   }
+// }
 
 function onLoadMore(e) {
   e.preventDefault();
@@ -86,7 +100,7 @@ async function getPictures(q = '') {
         smoothScrollDown();
       } else {
         console.log('creating gallery');
-        myGalleryLightbox = new SimpleLightbox('.gallery a.gallery__link',{});
+        myGalleryLightbox = new SimpleLightbox('.gallery a.gallery__link', {});
         console.log(document.querySelector('.gallery a.gallery__link'));
         console.log(myGalleryLightbox);
         Notify.success(`Hooray! We found ${totalHits} images.`);
@@ -147,12 +161,7 @@ function showResults({ hits: results, totalHits }) {
 function showLoadingAnimation(show = true) {
   if (show) {
     refs.loadingImg.classList.remove('is-hidden');
-
-    const { height: imgHeight } = document
-      .querySelector('.gallery__loading')
-      .getBoundingClientRect();
-
-    window.scrollBy({ top: imgHeight });
+    refs.loadingImg.scrollIntoView();
   } else refs.loadingImg.classList.add('is-hidden');
 }
 
