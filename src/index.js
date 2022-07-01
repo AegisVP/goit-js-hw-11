@@ -1,19 +1,33 @@
 import axios from 'axios';
 import { Notify } from 'notiflix';
+import SimpleLightbox from 'simplelightbox';
+import 'simplelightbox/dist/simple-lightbox.min.css';
 
-const searchFormRef = document.querySelector('form#search-form');
-const loadMoreButtonRef = document.querySelector('.gallery__loadmore-button');
-const galleryRef = document.querySelector('.gallery');
-const loadingImgRef = document.querySelector('.gallery__loading');
-const submitBtnRef = document.querySelector('form.search-form > button[type="submit"');
+const refs = {
+  searchForm: document.querySelector('form#search-form'),
+  loadMoreButton: document.querySelector('.gallery__loadmore-button'),
+  gallery: document.querySelector('.gallery'),
+  loadingImg: document.querySelector('.gallery__loading'),
+  submitBtn: document.querySelector('form.search-form > button[type="submit"'),
+  searchQuery: document.querySelector('form > input[name="searchQuery"]'),
+};
+
+// const searchFormRef = document.querySelector('form#search-form');
+// const loadMoreButtonRef = document.querySelector('.gallery__loadmore-button');
+// const galleryRef = document.querySelector('.gallery');
+// const loadingImgRef = document.querySelector('.gallery__loading');
+// const submitBtnRef = document.querySelector(
+//   'form.search-form > button[type="submit"'
+// );
 
 let page = null;
 let perPage = 40;
 let searchQuery = null;
+let myGalleryLightbox = null;
 
-searchFormRef.addEventListener('submit', onSearchSubmit);
-searchFormRef.searchQuery.addEventListener('input', onInput);
-loadMoreButtonRef.addEventListener('click', onLoadMore);
+refs.searchForm.addEventListener('submit', onSearchSubmit);
+refs.searchQuery.addEventListener('input', onInput);
+refs.loadMoreButton.addEventListener('click', onLoadMore);
 
 function onLoadMore(e) {
   e.preventDefault();
@@ -25,13 +39,13 @@ function onLoadMore(e) {
 function onSearchSubmit(e) {
   e.preventDefault();
   page = 1;
-  submitBtnRef.disabled = true;
+  refs.submitBtn.disabled = true;
   searchQuery = e.currentTarget.searchQuery.value.trim();
   getPictures(searchQuery);
 }
 
 function onInput() {
-  submitBtnRef.disabled = false;
+  refs.submitBtn.disabled = false;
   clearGallery();
 }
 
@@ -56,21 +70,33 @@ async function getPictures(q = '') {
   }
 
   try {
-    showLoadingAnimation(true);    
+    showLoadingAnimation(true);
     const response = await axios.get(formSearchQueryUrl(q));
     showLoadingAnimation(false);
 
     const { hits, totalHits } = response.data;
 
     if (totalHits > 0) {
+      console.log(hits);
+
       showResults({ hits, totalHits });
 
-      if (page !== 1) smoothScrollDown();
-      else Notify.success(`Hooray! We found ${totalHits} images.`);
+      if (page !== 1) {
+        myGalleryLightbox.refresh();
+        smoothScrollDown();
+      } else {
+        console.log('creating gallery');
+        myGalleryLightbox = new SimpleLightbox('.gallery a.gallery__link',{});
+        console.log(document.querySelector('.gallery a.gallery__link'));
+        console.log(myGalleryLightbox);
+        Notify.success(`Hooray! We found ${totalHits} images.`);
+      }
 
       page += 1;
     } else {
-      Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
     }
   } catch (error) {
     console.error(error);
@@ -87,56 +113,58 @@ function showResults({ hits: results, totalHits }) {
     showLoadMoreButton(true);
   }
 
-  galleryRef.insertAdjacentHTML(
+  refs.gallery.insertAdjacentHTML(
     'beforeend',
     results
       .map(
         res => `
-      <div class="gallery__photo-card">
-        <div class="gallery__image">
-          <img src="${res.webformatURL}" alt="${res.tags}" loading="lazy" />
+      <a class="gallery__link" href="${res.largeImageURL}">
+        <div class="gallery__photo-card">
+          <div class="gallery__image-container">
+            <img class="gallery__image" src="${res.webformatURL}" alt="${res.tags}" loading="lazy" />
+          </div>
+          <div class="gallery__info">
+            <p class="gallery__info-item">
+              <b>Likes<br>${res.likes}</b>
+            </p>
+            <p class="gallery__info-item">
+              <b>Views<br>${res.views}</b>
+            </p>
+            <p class="gallery__info-item">
+              <b>Comments<br>${res.comments}</b>
+            </p>
+            <p class="gallery__info-item">
+              <b>Downloads<br>${res.downloads}</b>
+            </p>
+          </div>
         </div>
-        <div class="gallery__info">
-          <p class="gallery__info-item">
-            <b>Likes<br>${res.likes}</b>
-          </p>
-          <p class="gallery__info-item">
-            <b>Views<br>${res.views}</b>
-          </p>
-          <p class="gallery__info-item">
-            <b>Comments<br>${res.comments}</b>
-          </p>
-          <p class="gallery__info-item">
-            <b>Downloads<br>${res.downloads}</b>
-          </p>
-        </div>
-      </div>`
+      </a>`
       )
       .join('')
   );
 }
 
 function showLoadingAnimation(show = true) {
-  if (show) {      
-    loadingImgRef.classList.remove('is-hidden');
+  if (show) {
+    refs.loadingImg.classList.remove('is-hidden');
 
     const { height: imgHeight } = document
       .querySelector('.gallery__loading')
       .getBoundingClientRect();
 
     window.scrollBy({ top: imgHeight });
-  } else loadingImgRef.classList.add('is-hidden');
+  } else refs.loadingImg.classList.add('is-hidden');
 }
 
 function showLoadMoreButton(show = true) {
-  if (show) loadMoreButtonRef.classList.remove('is-hidden');
-  else loadMoreButtonRef.classList.add('is-hidden');
+  if (show) refs.loadMoreButton.classList.remove('is-hidden');
+  else refs.loadMoreButton.classList.add('is-hidden');
 }
 
 function clearGallery() {
   showLoadMoreButton(false);
-  galleryRef.innerHTML = '';
-  searchFormRef.searchQuery.focus();
+  refs.gallery.innerHTML = '';
+  refs.searchQuery.focus();
 }
 
 function reachedEndOfList() {

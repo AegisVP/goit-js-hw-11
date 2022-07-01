@@ -42,6 +42,11 @@
   display: none;
 }
 
+.gallery__link {
+  text-decoration: none;
+  color: #000000;
+}
+
 .gallery__photo-card {
   display: flex;
   flex-direction: column;
@@ -55,13 +60,21 @@
   box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
 }
 
-.gallery__image {
+.gallery__image-container {
   width: 100%;
   height: 250px;
 
+  outline: 1px solid tomato;
+
   font-size: 0;
-  object-fit: cover;
   overflow: hidden;
+}
+
+.gallery__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
 }
 
 .gallery__info {
