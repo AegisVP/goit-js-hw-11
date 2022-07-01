@@ -5,6 +5,7 @@ import debounce from 'lodash.debounce';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const DEBOUNCE_DELAY = 250;
+const doScrollMonitor = debounce(doInfiniteScroll, DEBOUNCE_DELAY);
 
 const refs = {
   searchForm: document.querySelector('form#search-form'),
@@ -24,28 +25,33 @@ refs.searchForm.addEventListener('submit', onSearchSubmit);
 refs.searchQuery.addEventListener('input', onInput);
 refs.loadMoreButton.addEventListener('click', onLoadMore);
 
-// window.addEventListener('scroll', debounce(doInfiniteScroll, DEBOUNCE_DELAY));
+// function doScrollMonitor() {
+//   console.log('Scroll monitor fired');
 
-// function doInfiniteScroll() {
-//   console.log('infinite scroll fired');
-//   const nr = { ...refs, lastImage: refs.gallery.lastChild };
-//   const bounding = nr.lastImage?.getBoundingClientRect();
-//   const imgHeight = nr.lastImage?.offsetHeight;
-
-//   console.log(nr);
-
-//   if (
-//     bounding.top >= -imgHeight &&
-//     bounding.bottom <=
-//       (window.innerHeight || document.documentElement.clientHeight) + imgHeight
-//   ) {
-//     onLoadMore();
-//   }
 // }
 
+function doInfiniteScroll() {
+  console.log('infinite scroll fired');
+  const nr = { ...refs, lastImage: refs.gallery.lastChild };
+  const bounding = nr.lastImage?.getBoundingClientRect();
+  const imgHeight = nr.lastImage?.offsetHeight;
+
+  console.log(nr);
+
+  if (
+    bounding.top >= -imgHeight &&
+    bounding.bottom <=
+      (window.innerHeight || document.documentElement.clientHeight) + imgHeight
+  ) {
+    onLoadMore();
+  }
+}
+
 function onLoadMore(e) {
-  e.preventDefault();
-  showLoadMoreButton(false);
+  // e.preventDefault();
+  // showLoadMoreButton(false);
+  console.log('onloadmore, removing scroll listener');
+  window.removeEventListener('scroll', doScrollMonitor);
 
   getPictures(searchQuery);
 }
@@ -97,12 +103,9 @@ async function getPictures(q = '') {
 
       if (page !== 1) {
         myGalleryLightbox.refresh();
-        smoothScrollDown();
+        // smoothScrollDown();
       } else {
-        console.log('creating gallery');
         myGalleryLightbox = new SimpleLightbox('.gallery a.gallery__link', {});
-        console.log(document.querySelector('.gallery a.gallery__link'));
-        console.log(myGalleryLightbox);
         Notify.success(`Hooray! We found ${totalHits} images.`);
       }
 
@@ -124,7 +127,10 @@ function showResults({ hits: results, totalHits }) {
   if (page * perPage >= totalHits) {
     reachedEndOfList();
   } else {
-    showLoadMoreButton(true);
+    // showLoadMoreButton(true);
+
+    console.log('showresult, adding scroll listener');
+    window.addEventListener('scroll', doScrollMonitor);
   }
 
   refs.gallery.insertAdjacentHTML(
@@ -161,35 +167,41 @@ function showResults({ hits: results, totalHits }) {
 function showLoadingAnimation(show = true) {
   if (show) {
     refs.loadingImg.classList.remove('is-hidden');
-    refs.loadingImg.scrollIntoView();
+    // refs.loadingImg.scrollIntoView();
   } else refs.loadingImg.classList.add('is-hidden');
 }
 
-function showLoadMoreButton(show = true) {
-  if (show) refs.loadMoreButton.classList.remove('is-hidden');
-  else refs.loadMoreButton.classList.add('is-hidden');
-}
+// function showLoadMoreButton(show = true) {
+//   if (show) refs.loadMoreButton.classList.remove('is-hidden');
+//   else refs.loadMoreButton.classList.add('is-hidden');
+// }
 
 function clearGallery() {
-  showLoadMoreButton(false);
+  // showLoadMoreButton(false);
   refs.gallery.innerHTML = '';
   refs.searchQuery.focus();
+
+  console.log('cleargallery, removing scroll listener');
+  window.removeEventListener('scroll', doScrollMonitor);
 }
 
 function reachedEndOfList() {
-  showLoadMoreButton(false);
+  // showLoadMoreButton(false);
   Notify.info("You've reached the end of search results");
+
+  console.log('reachedendoflist, removing scroll listener');
+  window.removeEventListener('scroll', doScrollMonitor);
 }
 
-function smoothScrollDown() {
-  // get gallery card (first child of element "gallery") height and put to variable cardHeight
-  const { height: cardHeight } = document
-    .querySelector('.gallery')
-    .firstElementChild.getBoundingClientRect();
+// function smoothScrollDown() {
+//   // get gallery card (first child of element "gallery") height and put to variable cardHeight
+//   const { height: cardHeight } = document
+//     .querySelector('.gallery')
+//     .firstElementChild.getBoundingClientRect();
 
-  // smoothly scroll window horisontally (top) by the height of two cards (cardHeight * 2)
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: 'smooth',
-  });
-}
+//   // smoothly scroll window horisontally (top) by the height of two cards (cardHeight * 2)
+//   window.scrollBy({
+//     top: cardHeight * 2,
+//     behavior: 'smooth',
+//   });
+// }
